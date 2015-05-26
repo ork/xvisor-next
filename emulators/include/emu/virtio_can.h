@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013 Benoît Taine.
+ * Copyright (c) 2015 Benoît Taine.
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify

@@ -250,7 +250,6 @@ struct flexcan_devtype_data {
 
 struct flexcan_priv {
 	struct can_priv can;
-	struct napi_struct napi;
 
 	void __iomem *base;
 	u32 reg_esr;
@@ -339,6 +338,52 @@ static struct vmm_driver flexcan_driver = {
 	.probe		= flexcan_probe,
 	.remove		= flexcan_remove,
 };
+
+static int flexcan_driver_probe(struct vmm_device *dev,
+				const struct vmm_devtree_nodeid *devid)
+{
+	int rc;
+	struct flexcan_priv *priv;
+	int irq;
+	u32 clock_freq = 0;
+
+	priv = vmm_zalloc(sizeof(struct flexcan_priv));
+	if (!priv) {
+		rc = VMM_ENOMEM;
+		goto free_nothing;
+	}
+
+	rc = vmm_devtree_read_u32(dev->node, "clock-frequency", &clock_freq);
+
+	if (!clock_freq) {
+		priv->clk_ipg = devm_clk_get(dev, "ipg");
+		if (IS_ERR(priv->clk_ipg)) {
+			dev_err(dev, "no ipg clock defined\n");
+			return PTR_ERR(priv->clk_ipg);
+		}
+
+		priv->clk_per = devm_clk_get(dev, "per");
+		if (IS_ERR(priv->clk_per)) {
+			dev_err(dev, "no per clock defined\n");
+			return PTR_ERR(priv->clk_per);
+		}
+		clock_freq = clk_get_rate(priv->clk_per);
+	}
+
+	rc = vmm_devtree_irq_get(dev->node, &irq, 0);
+	if (rc) {
+		goto free_reg;
+	}
+
+	dev->priv = priv;
+
+	return VMM_OK;
+
+free_reg:
+	// vmm_devtree_regunmap_release(dev->node, base, 0);
+free_nothing:
+	return rc;
+}
 
 static int __init flexcan_driver_init(void)
 {
