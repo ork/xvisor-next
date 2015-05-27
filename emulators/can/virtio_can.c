@@ -39,6 +39,11 @@
 struct virtio_can_dev {
 	struct virtio_device *vdev;
 
+	struct virtio_queue vq_ctrl;
+	struct virtio_queue *vqs_rx;
+	struct virtio_queue *vqs_tx;
+	u32 feature;
+
 	char name[VIRTIO_DEVICE_MAX_NAME_LEN];
 };
 
